@@ -1,6 +1,6 @@
 // =================================================================
-//  台灣地震預警 LINE 機器人 - Google Apps Script
-//  功能：串接中央氣象署 API，即時推送地震通知至 LINE
+//  台灣地震預警 LINE + Instagram 機器人 - Google Apps Script
+//  功能：串接中央氣象署 API，即時推送地震通知至 LINE 和 Instagram
 //  資料庫：Google 試算表（避免重複發送）
 // =================================================================
 
@@ -10,11 +10,14 @@
 // 中央氣象署 API 授權碼（至 https://opendata.cwa.gov.tw/ 申請）
 const CWA_API_KEY = 'CWA-6C434703-95D0-4AB8-B822-42F8C6E37156';
 
-// LINE Channel Access Token（至 LINE Developers Console 取得）
+// LINE 設定
 const LINE_ACCESS_TOKEN = 'YjXCDwD2hSWcMhbwnDVFyHpV/mV3viKmJtKubK4alHh0f7tJAcYo2LkoyEyyaiOmThhwko0AtQuM1qMONNswRK+QEQ97eS6cYel2uprpuKwmKMt0G6hN6O5TCfy/LNE4gwc5CHhxfSuf5+0ka08EwgdB04t89/1O/w1cDnyilFU=';
-
-// LINE 推播對象 User ID（可設定多個，用逗號分隔）
 const LINE_USER_IDS = 'U6d9a50db673a7a7165a9b0840cae08a0';
+
+// Instagram 設定
+const IG_PAGE_ACCESS_TOKEN = 'EAASoiVZAxZBf8BR2NeV2oh4XXZCTtZBbjRLfmlkIIiZCsC2bB6BZCxtP5YJk1faQVZCXEaoe0XXr01ZCo1Biv5xZA49yIU8P2ZCo2m41gakr30NTS4QAHzKY7vgqIPamf9SfKmdXbOc4ZBNRa2MszaeZAlFDnssZAfifPSW0lmqz8dD9Dq7ZAe1bvgECYxqArjt7sOazIOAMWhLs8wuY6Y3uOXJZBRCZB4m4oQ3XrW8ftDZBqboZA0QdZABkM8KVNz8NufVc4fv2sWd59r6v6eubJSz1w4ZD';
+const IG_PAGE_ID = '1217107104812349';
+const IG_USER_IDS = '';
 
 // Google 試算表 ID（用於記錄已發送的地震，避免重複）
 const SPREADSHEET_ID = '1i5eSFJErJjh2dPsK6SvHFDQYOX8hgLDOdKjHsfUkNOM';
@@ -277,13 +280,13 @@ function formatEarthquakeMessage(earthquakeData) {
 }
 
 /**
- * 推播訊息給所有使用者
+ * 推播訊息給所有使用者（LINE + Instagram）
  * @param {string} message - 要推播的訊息
  */
 function pushToAllUsers(message) {
-  const userIds = LINE_USER_IDS.split(',');
-  
-  userIds.forEach(function(userId) {
+  // 推播至 LINE
+  const lineUserIds = LINE_USER_IDS.split(',');
+  lineUserIds.forEach(function(userId) {
     const trimmedId = userId.trim();
     if (trimmedId) {
       pushMessage(trimmedId, message);
@@ -291,6 +294,18 @@ function pushToAllUsers(message) {
       Utilities.sleep(1000); // 避免 API 限流
     }
   });
+  
+  // 推播至 Instagram
+  const igUserIds = IG_USER_IDS.split(',');
+  igUserIds.forEach(function(userId) {
+    const trimmedId = userId.trim();
+    if (trimmedId) {
+      pushIGMessage(trimmedId, message);
+      Utilities.sleep(1000); // 避免 API 限流
+    }
+  });
+  
+  Logger.log('訊息已推播至所有平台');
 }
 
 /**
@@ -325,7 +340,7 @@ function pushMessage(userId, message) {
   const responseCode = response.getResponseCode();
   
   if (responseCode !== 200) {
-    Logger.log('推播失敗 [' + userId + ']：' + response.getContentText());
+    Logger.log('LINE 推播失敗 [' + userId + ']：' + response.getContentText());
   }
 }
 
@@ -363,6 +378,77 @@ function pushSticker(userId) {
   if (responseCode !== 200) {
     Logger.log('貼圖推播失敗 [' + userId + ']：' + response.getContentText());
   }
+}
+
+// ===================== Instagram 函式 =====================
+
+/**
+ * 推播文字訊息至 Instagram
+ * @param {string} recipientId - Instagram 用戶 ID (IGSID)
+ * @param {string} message - 訊息內容
+ */
+function pushIGMessage(recipientId, message) {
+  const url = 'https://graph.facebook.com/v25.0/' + IG_PAGE_ID + '/messages';
+  
+  const payload = {
+    'recipient': {
+      'id': recipientId
+    },
+    'message': {
+      'text': message
+    }
+  };
+  
+  const options = {
+    'method': 'post',
+    'headers': {
+      'Content-Type': 'application/json'
+    },
+    'payload': JSON.stringify(payload),
+    'muteHttpExceptions': true
+  };
+  
+  // 使用 Query String 傳遞 Access Token
+  const fullUrl = url + '?access_token=' + IG_PAGE_ACCESS_TOKEN;
+  
+  const response = UrlFetchApp.fetch(fullUrl, options);
+  const responseCode = response.getResponseCode();
+  
+  if (responseCode !== 200) {
+    Logger.log('IG 推播失敗 [' + recipientId + ']：' + response.getContentText());
+  } else {
+    Logger.log('IG 推播成功 [' + recipientId + ']');
+  }
+}
+
+/**
+ * 取得 Instagram 用戶資訊
+ * @param {string} igsid - Instagram 用戶 ID (IGSID)
+ * @return {Object} 用戶資訊
+ */
+function getIGUserInfo(igsid) {
+  const url = 'https://graph.facebook.com/v25.0/' + igsid + '?fields=name,username&access_token=' + IG_PAGE_ACCESS_TOKEN;
+  
+  const response = UrlFetchApp.fetch(url, { 'muteHttpExceptions': true });
+  const data = JSON.parse(response.getContentText());
+  
+  return data;
+}
+
+/**
+ * 測試用：發送 IG 測試訊息
+ */
+function sendIGTestMessage() {
+  const testMessage = 
+    '╔══════════════════════════╗\n' +
+    '║  🌏 台灣地震速報系統  ║\n' +
+    '╚══════════════════════════╝\n\n' +
+    '✅ Instagram 連線測試成功！\n\n' +
+    '當您收到此訊息，表示 IG 推播功能正常運作。\n' +
+    '地震發生時，您將收到即時通知。';
+  
+  Logger.log('IG 測試訊息已準備，等待用戶查詢...');
+  Logger.log('請用戶傳訊息給您的 Instagram 帳號：earthquake_shout');
 }
 
 // ===================== 設定用函式 =====================
@@ -699,6 +785,13 @@ function doGet(e) {
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
+    
+    // 檢查是否為 Instagram Webhook
+    if (data.object === 'instagram') {
+      return handleInstagramWebhook(data);
+    }
+    
+    // 否則處理 LINE Webhook
     const event = data.events[0];
     
     if (event.type === 'message' && event.message.type === 'text') {
@@ -706,29 +799,29 @@ function doPost(e) {
       const replyToken = event.replyToken;
       
       // 處理不同的用戶訊息
-      let replyMessage = '';
+      let replyText = '';
       
       if (userMessage === '地震' || userMessage === '最新') {
         const earthquakeData = getLatestEarthquake();
         if (earthquakeData) {
-          replyMessage = formatEarthquakeMessage(earthquakeData);
+          replyText = formatEarthquakeMessage(earthquakeData);
         } else {
-          replyMessage = '目前沒有地震資訊。';
+          replyText = '目前沒有地震資訊。';
         }
       } else if (userMessage === '幫助' || userMessage === 'help') {
-        replyMessage = '【台灣地震速報系統】\n\n' +
+        replyText = '【台灣地震速報系統】\n\n' +
           '指令說明：\n' +
           '📍 地震 - 查看最新地震資訊\n' +
           '📍 最新 - 查看最新地震資訊\n' +
           '📍 幫助 - 顯示此說明\n\n' +
           '系統將自動推播地震通知。';
       } else {
-        replyMessage = '您說了：「' + userMessage + '」\n\n' +
+        replyText = '您說了：「' + userMessage + '」\n\n' +
           '輸入「地震」查看最新資訊\n輸入「幫助」查看所有指令';
       }
       
       // 回覆訊息
-      replyMessage(replyToken, replyMessage);
+      replyLINEMessage(replyToken, replyText);
     }
     
     return ContentService.createTextOutput(JSON.stringify({status: 'ok'}))
@@ -742,11 +835,58 @@ function doPost(e) {
 }
 
 /**
+ * 處理 Instagram Webhook 事件
+ * @param {Object} data - Webhook 資料
+ * @return {TextOutput} 回應
+ */
+function handleInstagramWebhook(data) {
+  data.entry.forEach(function(entry) {
+    const messaging = entry.messaging;
+    if (messaging) {
+      messaging.forEach(function(event) {
+        const senderId = event.sender.id;
+        
+        // 處理文字訊息
+        if (event.message && event.message.text) {
+          const userMessage = event.message.text;
+          let replyText = '';
+          
+          if (userMessage === '地震' || userMessage === '最新') {
+            const earthquakeData = getLatestEarthquake();
+            if (earthquakeData) {
+              replyText = formatEarthquakeMessage(earthquakeData);
+            } else {
+              replyText = '目前沒有地震資訊。';
+            }
+          } else if (userMessage === '幫助' || userMessage === 'help') {
+            replyText = '【台灣地震速報系統】\n\n' +
+              '指令說明：\n' +
+              '📍 地震 - 查看最新地震資訊\n' +
+              '📍 最新 - 查看最新地震資訊\n' +
+              '📍 幫助 - 顯示此說明\n\n' +
+              '系統將自動推播地震通知。';
+          } else {
+            replyText = '您說了：「' + userMessage + '」\n\n' +
+              '輸入「地震」查看最新資訊\n輸入「幫助」查看所有指令';
+          }
+          
+          // 回覆 IG 訊息
+          pushIGMessage(senderId, replyText);
+        }
+      });
+    }
+  });
+  
+  return ContentService.createTextOutput(JSON.stringify({status: 'ok'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
  * 回覆訊息至 LINE
  * @param {string} replyToken - 回覆 Token
  * @param {string} message - 訊息內容
  */
-function replyMessage(replyToken, message) {
+function replyLINEMessage(replyToken, message) {
   const url = 'https://api.line.me/v2/bot/message/reply';
   
   const payload = {
