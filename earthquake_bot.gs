@@ -98,13 +98,21 @@ function getLatestEarthquake() {
   
   const latest = earthquakes[0];
   
-  // 解析地震資訊（加入安全檢查）
+  // 解析地震資訊（根據實際 API 結構）
   const earthquakeInfo = {
     id: latest.EarthquakeNo || '未知',
-    time: (latest.EarthquakeTime && latest.EarthquakeTime.DateTime) ? latest.EarthquakeTime.DateTime : new Date().toISOString(),
-    location: (latest.Epicenter && latest.Epicenter.Location) ? latest.Epicenter.Location : '未知',
-    magnitude: (latest.Magnitude && latest.Magnitude.MagnitudeValue) ? latest.Magnitude.MagnitudeValue : 0,
-    depth: latest.FocalDepth || 0,
+    time: (latest.EarthquakeInfo && latest.EarthquakeInfo.OriginTime) 
+          ? latest.EarthquakeInfo.OriginTime 
+          : (latest.IssueTime || new Date().toISOString()),
+    location: (latest.EarthquakeInfo && latest.EarthquakeInfo.Epicenter && latest.EarthquakeInfo.Epicenter.Location) 
+              ? latest.EarthquakeInfo.Epicenter.Location 
+              : '未知',
+    magnitude: (latest.EarthquakeInfo && latest.EarthquakeInfo.EarthquakeMagnitude && latest.EarthquakeInfo.EarthquakeMagnitude.MagnitudeValue) 
+               ? latest.EarthquakeInfo.EarthquakeMagnitude.MagnitudeValue 
+               : 0,
+    depth: (latest.EarthquakeInfo && latest.EarthquakeInfo.FocalDepth) 
+           ? latest.EarthquakeInfo.FocalDepth 
+           : 0,
     reportContent: latest.ReportContent || '',
     reportImageURI: latest.ReportImageURI || '',
     feltAreas: []
@@ -116,7 +124,7 @@ function getLatestEarthquake() {
     areas.forEach(function(area) {
       if (area.AreaIntensity) {
         earthquakeInfo.feltAreas.push({
-          county: area.AreaName || area.CountyName,
+          county: area.AreaName || area.CountyName || '未知',
           intensity: area.AreaIntensity
         });
       }
@@ -237,8 +245,8 @@ function formatEarthquakeMessage(earthquakeData) {
     });
     
     sortedLevels.forEach(function(level) {
-      const counties = intensityGroups[level].join('、');
-      intensityText += '\n  ⚡ ' + level + '級：' + counties;
+      const counties = '、'.join(groups[level]);
+      intensityText += '\n  ⚡ ' + level + '：' + counties;
     });
   }
   
@@ -379,6 +387,32 @@ function setupTrigger() {
     .create();
   
   Logger.log('時間觸發器已建立：每 1 分鐘執行一次');
+}
+
+/**
+ * 測試用：查看 API 原始回傳資料
+ */
+function debugApi() {
+  const url = 'https://opendata.cwa.gov.tw/api/v1/rest/datastore/E-A0015-001';
+  const params = {
+    'Authorization': CWA_API_KEY,
+    'format': 'JSON'
+  };
+  
+  const queryString = Object.keys(params).map(key => key + '=' + encodeURIComponent(params[key])).join('&');
+  const fullUrl = url + '?' + queryString;
+  
+  const response = UrlFetchApp.fetch(fullUrl, { 'muteHttpExceptions': true });
+  const data = JSON.parse(response.getContentText());
+  
+  Logger.log('=== API 原始回傳 ===');
+  Logger.log(JSON.stringify(data, null, 2));
+  
+  if (data.records && data.records.Earthquake) {
+    const latest = data.records.Earthquake[0];
+    Logger.log('=== 第一筆地震資料 ===');
+    Logger.log(JSON.stringify(latest, null, 2));
+  }
 }
 
 /**
