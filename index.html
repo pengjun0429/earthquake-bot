@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣地震速報系統 - LINE 機器人</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+        }
+
+        .container {
+            text-align: center;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .logo {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #a0a0a0;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .qr-container {
+            background: #fff;
+            border-radius: 15px;
+            padding: 20px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .qr-placeholder {
+            width: 200px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .line-badge {
+            display: inline-flex;
+            align-items: center;
+            background: #06C755;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 15px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .line-badge:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(6, 199, 85, 0.4);
+        }
+
+        .line-badge img {
+            width: 30px;
+            margin-right: 10px;
+        }
+
+        .features {
+            text-align: left;
+            margin-top: 20px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            margin-right: 15px;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .feature-text {
+            font-size: 14px;
+            color: #d0d0d0;
+        }
+
+        .feature-text strong {
+            color: #fff;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .footer {
+            font-size: 12px;
+            color: #666;
+            margin-top: 20px;
+        }
+
+        .footer a {
+            color: #3a7bd5;
+            text-decoration: none;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00d2ff;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .setup-note {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #ffc107;
+        }
+
+        .setup-note code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🌏</div>
+        <h1>台灣地震速報系統</h1>
+        <p class="subtitle">即時地震資訊，第一時間推播至您的手機</p>
+
+        <div class="card">
+            <div class="qr-container">
+                <div class="qr-placeholder" id="qrcode">
+                    <!-- LINE 機器人 QR Code -->
+                    <img src="qrcode.png" alt="LINE QR Code" style="width: 200px; height: 200px;">
+                </div>
+            </div>
+            <br>
+            <a href="https://line.me/R/ti/p/@368klcve" class="line-badge" target="_blank">
+                加入好友接收通知
+            </a>
+            <br><br>
+            <a href="https://script.google.com/macros/s/AKfycbyTwA_IW4FcnrLk2qOiXtcI3iQ_7FgXrENm4ItZBvGC-yiLbNwlK0S_qqwxW6g2rjkw/exec" class="line-badge" style="background: #3a7bd5;" target="_blank">
+                查看即時地震資訊
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="features">
+                <div class="feature-item">
+                    <span class="feature-icon">⚡</span>
+                    <div class="feature-text">
+                        <strong>即時推播</strong>
+                        地震發生後立即通知，不漏接任何重要資訊
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">📊</span>
+                    <div class="feature-text">
+                        <strong>詳細資訊</strong>
+                        包含震央、規模、深度及各地震度分布
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🔔</span>
+                    <div class="feature-text">
+                        <strong>智慧分級</strong>
+                        根據規模自動分級，重要地震特別標示
+                    </div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🆓</span>
+                    <div class="feature-text">
+                        <strong>完全免費</strong>
+                        不收取任何費用，純粹為台灣防災盡一份心力
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number" id="earthquake-count">--</div>
+                <div class="stat-label">累計監測地震</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="notification-count">--</div>
+                <div class="stat-label">推播通知次數</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="user-count">--</div>
+                <div class="stat-label">好友人數</div>
+            </div>
+        </div>
+
+        <div class="setup-note">
+            ⚙️ 系統設定提醒<br>
+            請將 <code>YOUR_LINE_ID</code> 替換為您的 LINE 官方帳號 ID<br>
+            請將 <code>YOUR_QR_CODE_IMAGE_URL</code> 替換為 QR Code 圖片連結
+        </div>
+
+        <div class="footer">
+            <p>資料來源：<a href="https://www.cwa.gov.tw/" target="_blank">中央氣象署</a></p>
+            <p>© 2024 台灣地震速報系統</p>
+        </div>
+    </div>
+
+    <script>
+        // 模擬動態數據（實際應從後端取得）
+        function animateNumber(element, target) {
+            let current = 0;
+            const increment = Math.ceil(target / 50);
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                element.textContent = current.toLocaleString();
+            }, 30);
+        }
+
+        // 初始化動畫
+        window.onload = function() {
+            animateNumber(document.getElementById('earthquake-count'), 12847);
+            animateNumber(document.getElementById('notification-count'), 45623);
+            animateNumber(document.getElementById('user-count'), 8901);
+        };
+    </script>
+</body>
+</html>
