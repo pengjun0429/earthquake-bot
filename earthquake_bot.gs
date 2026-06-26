@@ -27,7 +27,7 @@ const STICKER_ID = '1988';
 
 /**
  * 主觸發函式 - 由時間觸發器自動執行
- * 建議設定每 1-2 分鐘執行一次
+ * 每 1 分鐘自動檢查一次地震
  */
 function checkEarthquake() {
   try {
@@ -372,13 +372,13 @@ function setupTrigger() {
     }
   });
   
-  // 建立新的觸發器（每 2 分鐘）
+  // 建立新的觸發器（每 1 分鐘）
   ScriptApp.newTrigger('checkEarthquake')
     .timeBased()
-    .everyMinutes(2)
+    .everyMinutes(1)
     .create();
   
-  Logger.log('時間觸發器已建立：每 2 分鐘執行一次');
+  Logger.log('時間觸發器已建立：每 1 分鐘執行一次');
 }
 
 /**
