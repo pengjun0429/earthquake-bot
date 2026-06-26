@@ -22,6 +22,9 @@ const IG_USER_IDS = '';
 // Google 試算表 ID（用於記錄已發送的地震，避免重複）
 const SPREADSHEET_ID = '1i5eSFJErJjh2dPsK6SvHFDQYOX8hgLDOdKjHsfUkNOM';
 
+// Instagram Webhook 驗證 Token
+const IG_VERIFY_TOKEN = 'earthquake_verify_token';
+
 // 地震貼圖設定
 const STICKER_PACKAGE_ID = '446';
 const STICKER_ID = '1988';
@@ -572,12 +575,19 @@ function clearRecords() {
 // ===================== Web App 函式 =====================
 
 /**
- * Web App 入口函式 - 回傳地震資訊頁面
+ * Web App 入口函式 - 處理 GET 請求
+ * 包含 Instagram Webhook 驗證
  * @param {Object} e - 事件物件
- * @return {HtmlOutput} HTML 頁面
+ * @return {HtmlOutput|TextOutput} 回應
  */
 function doGet(e) {
-  // 取得最新地震資料
+  // 檢查是否為 Instagram Webhook 驗證請求
+  if (e.parameter['hub.mode'] === 'subscribe' && e.parameter['hub.verify_token'] === IG_VERIFY_TOKEN) {
+    Logger.log('Instagram Webhook 驗證成功');
+    return ContentService.createTextOutput(e.parameter['hub.challenge']);
+  }
+  
+  // 否則顯示地震資訊頁面
   const earthquakeData = getLatestEarthquake();
   
   let html = '';
